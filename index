@@ -48,12 +48,44 @@
     let userCookingGrade = {};
     let userLastAttendance = {};
 
-    const fishTypes = [
+    // 물고기 타입 데이터
+    var fishTypes = [
       { name: "타코문어", price: 450, material: "문어다리" },
       { name: "풀고등어", price: 1050, material: "고등어비늘" },
       { name: "경단붕어", price: 2250, material: "당고" },
       { name: "버터오징어", price: 12000, material: "버터조각" },
-      { name: "황금물고기", price: 150, material: "금조각" }
+      { name: "간장새우", price: 22500, material: "간장종지" },
+      { name: "물수수", price: 45000, material: "옥수수콘" },
+      { name: "정어리파이", price: 60000, material: "버터" },
+      { name: "얼음상어", price: 75000, material: "얼음조각" },
+      { name: "스퀄스퀴드", price: 90000, material: "오징어먹물" },
+      { name: "백년송거북", price: 150000, material: "백년송" },
+      { name: "고스피쉬", price: 225000, material: "후춧가루" },
+      { name: "유령치", price: 345000, material: "석화" },
+      { name: "바이트독", price: 705000, material: "핫소스" },
+      { name: "호박고래", price: 1050000, material: "펌킨조각" },
+      { name: "바이킹조개", price: 1875000, material: "꽃술나리" },
+      { name: "천사해파리", price: 3660000, material: "프레첼" },
+      { name: "악마복어", price: 6150000, material: "베놈" },
+      { name: "칠성장어", price: 9900000, material: "장어꼬리" },
+      { name: "닥터블랙", price: 13980000, material: "아인스바인" },
+      { name: "해룡", price: 21600000, material: "헤븐즈서펀트" },
+      { name: "황금물고기", price: 150, material: "금조각" } // 황금물고기 추가
+    ];
+
+    // 각 물고기의 고정 확률 설정 (황금물고기 0.1% 추가, 기존 물고기 확률 조정)
+    var catchProbabilities = [
+      39.9, // 타코문어 확률 조정
+      25,
+      15,
+      8,
+      5,
+      3,
+      2,
+      1,
+      0.7,
+      0.3,
+      0.1 // 황금물고기 확률 추가
     ];
 
     const helpMessage = `
@@ -105,11 +137,23 @@
         return `⏳ ${remainingTime}초 후에 다시 낚시할 수 있습니다.`;
       }
 
-      const fish = fishTypes[Math.floor(Math.random() * fishTypes.length)];
+      // 랜덤으로 물고기 선택
+      const randomValue = Math.random() * 100;
+      let cumulativeProbability = 0;
+      let selectedFish = "물고기를 낚지 못했습니다.";
+
+      for (let i = 0; i < fishTypes.length; i++) {
+        cumulativeProbability += catchProbabilities[i];
+        if (randomValue < cumulativeProbability) {
+          selectedFish = fishTypes[i].name;
+          break;
+        }
+      }
+
       if (!inventory[sender]) inventory[sender] = {};
-      inventory[sender][fish.name] = (inventory[sender][fish.name] || 0) + 1;
+      inventory[sender][selectedFish] = (inventory[sender][selectedFish] || 0) + 1;
       lastFishingTime[sender] = currentTime;
-      return `🎣 ${sender}님이 ${fish.name}(을)를 낚았습니다!`;
+      return `🎣 ${sender}님이 ${selectedFish}(을)를 낚았습니다!`;
     }
 
     // 인벤토리 확인
