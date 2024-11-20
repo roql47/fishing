@@ -1,8 +1,3 @@
-// 숫자를 1,000 단위로 ','를 추가하는 함수
-function formatPrice(price) {
-  return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
 // 상점 아이템 목록 및 하위 아이템 설정
 var shopItems = {
   "낡은낚시대": { price: 10000, requires: null, fishingSkill: 1 },
