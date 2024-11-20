@@ -15,13 +15,18 @@
       border: 1px solid #ddd;
       padding: 10px;
       margin-top: 10px;
-      max-height: 200px;
+      max-height: 300px;
       overflow-y: auto;
     }
     button {
       margin: 5px 0;
       padding: 10px 20px;
       font-size: 16px;
+    }
+    input {
+      padding: 5px;
+      font-size: 16px;
+      margin-right: 10px;
     }
   </style>
 </head>
@@ -38,12 +43,17 @@
     let lastFishingTime = {};
     let fishingSkills = {};
     let equippedRod = {};
+    let lastRaidTime = {};
+    let userCookingSkills = {};
+    let userCookingGrade = {};
+    let userLastAttendance = {};
 
     const fishTypes = [
       { name: "타코문어", price: 450, material: "문어다리" },
       { name: "풀고등어", price: 1050, material: "고등어비늘" },
       { name: "경단붕어", price: 2250, material: "당고" },
-      { name: "황금물고기", price: 150, material: "금조각" },
+      { name: "버터오징어", price: 12000, material: "버터조각" },
+      { name: "황금물고기", price: 150, material: "금조각" }
     ];
 
     const helpMessage = `
@@ -51,25 +61,43 @@
     - 낚시하기: 물고기를 낚습니다.
     - 인벤토리: 현재 소유하고 있는 물고기와 골드를 확인합니다.
     - 판매하기 [물고기종류] [수량]: 지정한 물고기를 판매합니다.
+    - 분해하기 [물고기종류] [수량]: 지정한 물고기를 분해하여 재료를 얻습니다.
+    - 장착하기 [낚시대 이름]: 낚시대를 장착합니다.
+    - 낚시실력: 현재 낚시 실력을 확인합니다.
     - 도움말!: 사용 가능한 명령어 목록을 보여줍니다.
     `;
 
+    // 데이터 저장
     function save() {
-      localStorage.setItem("inventory", JSON.stringify(inventory));
-      localStorage.setItem("userGold", JSON.stringify(userGold));
-      localStorage.setItem("lastFishingTime", JSON.stringify(lastFishingTime));
-      localStorage.setItem("fishingSkills", JSON.stringify(fishingSkills));
-      localStorage.setItem("equippedRod", JSON.stringify(equippedRod));
+      const saveData = {
+        inventory,
+        userGold,
+        lastFishingTime,
+        fishingSkills,
+        equippedRod,
+        lastRaidTime,
+        userCookingSkills,
+        userCookingGrade,
+        userLastAttendance
+      };
+      localStorage.setItem("gameData", JSON.stringify(saveData));
     }
 
+    // 데이터 로드
     function load() {
-      inventory = JSON.parse(localStorage.getItem("inventory") || "{}");
-      userGold = JSON.parse(localStorage.getItem("userGold") || "{}");
-      lastFishingTime = JSON.parse(localStorage.getItem("lastFishingTime") || "{}");
-      fishingSkills = JSON.parse(localStorage.getItem("fishingSkills") || "{}");
-      equippedRod = JSON.parse(localStorage.getItem("equippedRod") || "{}");
+      const loadData = JSON.parse(localStorage.getItem("gameData") || "{}");
+      inventory = loadData.inventory || {};
+      userGold = loadData.userGold || {};
+      lastFishingTime = loadData.lastFishingTime || {};
+      fishingSkills = loadData.fishingSkills || {};
+      equippedRod = loadData.equippedRod || {};
+      lastRaidTime = loadData.lastRaidTime || {};
+      userCookingSkills = loadData.userCookingSkills || {};
+      userCookingGrade = loadData.userCookingGrade || {};
+      userLastAttendance = loadData.userLastAttendance || {};
     }
 
+    // 낚시하기
     function goFishing(sender) {
       const currentTime = Date.now();
       if (lastFishingTime[sender] && (currentTime - lastFishingTime[sender]) < 300000) {
@@ -84,6 +112,7 @@
       return `🎣 ${sender}님이 ${fish.name}(을)를 낚았습니다!`;
     }
 
+    // 인벤토리 확인
     function showInventory(sender) {
       if (!inventory[sender] || Object.keys(inventory[sender]).length === 0) {
         return `👜 가방이 비어 있습니다.\n💰 보유 골드: ${userGold[sender] || 0}원`;
@@ -95,11 +124,31 @@
       return inventoryList;
     }
 
+    // 물고기 판매
+    function sellFish(sender, fishName, quantity) {
+      if (!inventory[sender] || !inventory[sender][fishName] || inventory[sender][fishName] < quantity) {
+        return `${fishName}(이)가 없습니다.`;
+      }
+      const fish = fishTypes.find(f => f.name === fishName);
+      if (fish) {
+        const totalPrice = fish.price * quantity;
+        inventory[sender][fishName] -= quantity;
+        userGold[sender] = (userGold[sender] || 0) + totalPrice;
+        if (inventory[sender][fishName] === 0) {
+          delete inventory[sender][fishName];
+        }
+        return `${fishName} ${quantity}마리를 판매하여 ${totalPrice}원을 받았습니다. 현재 골드: ${userGold[sender]}원`;
+      }
+      return "잘못된 물고기 이름입니다.";
+    }
+
+    // 채팅 명령어 처리
     function handleCommand() {
       const input = document.getElementById("commandInput").value.trim();
       const output = document.getElementById("output");
       const sender = "사용자";
       load();
+
       let response;
 
       if (input === "낚시하기") {
